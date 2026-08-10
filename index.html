@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="在瀏覽器中將小於與大於符號轉換為 HTML 實體字元。">
+  <title>尖括號轉換器</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --canvas: #f3f6f9;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --ink: #15243a;
+      --muted: #66758a;
+      --line: #d9e1ea;
+      --line-strong: #c2cedc;
+      --accent: #1f5fae;
+      --accent-strong: #184c8b;
+      --accent-soft: #e8f1fc;
+      --success: #18794e;
+      --danger: #b42318;
+      --shadow: 0 18px 50px rgba(29, 53, 87, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-width: 320px; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background:
+        linear-gradient(rgba(31, 95, 174, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(31, 95, 174, 0.035) 1px, transparent 1px),
+        var(--canvas);
+      background-size: 32px 32px;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      line-height: 1.5;
+    }
+
+    button, textarea { font: inherit; }
+
+    .shell {
+      width: min(1160px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 64px 0 48px;
+    }
+
+    .intro {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 40px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 750;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 22px;
+      height: 2px;
+      background: currentColor;
+      content: "";
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Georgia, "Noto Serif TC", serif;
+      font-size: clamp(2.25rem, 5vw, 4rem);
+      font-weight: 600;
+      letter-spacing: -0.045em;
+      line-height: 1.04;
+    }
+
+    .intro-copy {
+      max-width: 410px;
+      margin: 0 0 5px;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .privacy {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 10px;
+      color: #466077;
+      font-size: 0.82rem;
+      font-weight: 650;
+    }
+
+    .privacy svg { color: var(--success); }
+
+    .tool-card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .rule-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      min-height: 52px;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-soft);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .rules { display: flex; gap: 8px; }
+
+    .rule {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 9px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface);
+      color: var(--ink);
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    .rule b { color: var(--accent); font-weight: 700; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr);
+      min-height: 380px;
+    }
+
+    .editor-panel {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      padding: 24px;
+    }
+
+    .editor-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      font-size: 0.86rem;
+      font-weight: 750;
+      letter-spacing: 0.025em;
+    }
+
+    .character-count {
+      color: var(--muted);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 0.72rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 286px;
+      flex: 1;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+      background: var(--surface-soft);
+      color: var(--ink);
+      padding: 17px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.92rem;
+      line-height: 1.7;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    textarea::placeholder { color: #93a1b2; }
+
+    textarea:focus {
+      border-color: var(--accent);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px rgba(31, 95, 174, 0.12);
+    }
+
+    textarea[readonly] { color: #30465f; }
+
+    .transform-axis {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-inline: 1px solid var(--line);
+      background: var(--surface-soft);
+    }
+
+    .transform-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border: 1px solid #c7d9ee;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-family: Georgia, serif;
+      font-size: 0.83rem;
+      font-weight: 700;
+      letter-spacing: -0.12em;
+      box-shadow: 0 3px 10px rgba(31, 95, 174, 0.1);
+    }
+
+    .footer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      min-height: 74px;
+      padding: 14px 18px 14px 24px;
+      border-top: 1px solid var(--line);
+    }
+
+    .status {
+      min-height: 24px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .status[data-tone="success"] { color: var(--success); }
+    .status[data-tone="error"] { color: var(--danger); }
+
+    .actions { display: flex; gap: 9px; }
+
+    .button {
+      display: inline-flex;
+      min-height: 42px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      padding: 9px 15px;
+      cursor: pointer;
+      font-size: 0.84rem;
+      font-weight: 720;
+      transition: transform 150ms ease, background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .button:hover:not(:disabled) { transform: translateY(-1px); }
+    .button:active:not(:disabled) { transform: translateY(0); }
+
+    .button:focus-visible {
+      outline: 3px solid rgba(31, 95, 174, 0.24);
+      outline-offset: 2px;
+    }
+
+    .button-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 5px 13px rgba(31, 95, 174, 0.22);
+    }
+
+    .button-primary:hover:not(:disabled) { background: var(--accent-strong); }
+
+    .button-secondary {
+      border-color: var(--line-strong);
+      background: var(--surface);
+      color: #344a62;
+    }
+
+    .button-secondary:hover:not(:disabled) {
+      border-color: #aabacc;
+      background: var(--surface-soft);
+    }
+
+    .button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      box-shadow: none;
+    }
+
+    .hint {
+      margin: 17px 4px 0;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-align: center;
+    }
+
+    kbd {
+      border: 1px solid var(--line-strong);
+      border-bottom-width: 2px;
+      border-radius: 4px;
+      background: var(--surface);
+      padding: 1px 5px;
+      color: #53657a;
+      font-family: inherit;
+      font-size: 0.7rem;
+    }
+
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 24px, 620px); padding-top: 34px; }
+      .intro { align-items: start; flex-direction: column; gap: 15px; }
+      .intro-copy { max-width: 520px; }
+      .rule-bar { align-items: flex-start; flex-direction: column; }
+      .workspace { grid-template-columns: 1fr; }
+      .editor-panel { padding: 20px; }
+      .transform-axis { height: 48px; border-inline: 0; border-block: 1px solid var(--line); }
+      .transform-mark { transform: rotate(90deg); }
+      .footer-bar { align-items: stretch; flex-direction: column; padding: 18px 20px 20px; }
+      .actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .button-primary { grid-column: 1 / -1; grid-row: 1; }
+      .status { text-align: center; }
+    }
+
+    @media (max-width: 430px) {
+      h1 { font-size: 2.15rem; }
+      .rules { flex-wrap: wrap; }
+      .actions { grid-template-columns: 1fr; }
+      .button-primary { grid-column: auto; }
+      textarea { min-height: 220px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="intro">
+      <div>
+        <p class="eyebrow">HTML utility</p>
+        <h1>尖括號轉換器</h1>
+      </div>
+      <div>
+        <p class="intro-copy">貼上內容，將所有小於與大於符號轉為可直接顯示的 HTML 實體字元。</p>
+        <span class="privacy">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3 5 6v5c0 4.7 2.9 8.1 7 10 4.1-1.9 7-5.3 7-10V6l-7-3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          所有內容只在此瀏覽器處理，不會上傳
+        </span>
+      </div>
+    </header>
+
+    <section class="tool-card" aria-label="HTML 尖括號轉換工具">
+      <div class="rule-bar">
+        <span>本工具只套用以下兩項規則，其他內容保持不變</span>
+        <div class="rules" aria-label="轉換規則">
+          <code class="rule">&lt; <b>→</b> &amp;lt;</code>
+          <code class="rule">&gt; <b>→</b> &amp;gt;</code>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <div class="editor-panel">
+          <div class="editor-heading">
+            <label for="inputText">原始內容</label>
+            <span id="inputCount" class="character-count">0 字元</span>
+          </div>
+          <textarea id="inputText" spellcheck="false" placeholder="例如：&lt;section&gt;Hello&lt;/section&gt;"></textarea>
+        </div>
+
+        <div class="transform-axis" aria-hidden="true">
+          <span class="transform-mark">&lt;&gt;</span>
+        </div>
+
+        <div class="editor-panel">
+          <div class="editor-heading">
+            <label for="outputText">轉換結果</label>
+            <span id="outputCount" class="character-count">0 字元</span>
+          </div>
+          <textarea id="outputText" readonly spellcheck="false" placeholder="轉換後的內容會顯示在這裡"></textarea>
+        </div>
+      </div>
+
+      <div class="footer-bar">
+        <p id="status" class="status" role="status" aria-live="polite">輸入內容後，按下「轉換內容」。</p>
+        <div class="actions">
+          <button id="clearButton" class="button button-secondary" type="button">清除內容</button>
+          <button id="copyButton" class="button button-secondary" type="button" disabled>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2"/></svg>
+            <span>複製結果</span>
+          </button>
+          <button id="convertButton" class="button button-primary" type="button">
+            轉換內容
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-5-5 5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <p class="hint">小提示：輸入完成後可按 <kbd>Ctrl</kbd> + <kbd>Enter</kbd> 快速轉換</p>
+  </main>
+
+  <script>
+    const input = document.querySelector('#inputText');
+    const output = document.querySelector('#outputText');
+    const inputCount = document.querySelector('#inputCount');
+    const outputCount = document.querySelector('#outputCount');
+    const convertButton = document.querySelector('#convertButton');
+    const clearButton = document.querySelector('#clearButton');
+    const copyButton = document.querySelector('#copyButton');
+    const copyLabel = copyButton.querySelector('span');
+    const status = document.querySelector('#status');
+    let copyResetTimer;
+
+    function escapeAngleBrackets(value) {
+      return value.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+    }
+
+    function setStatus(message, tone = '') {
+      status.textContent = message;
+      status.dataset.tone = tone;
+    }
+
+    function updateCount(element, value) {
+      element.textContent = `${value.length.toLocaleString('zh-Hant')} 字元`;
+    }
+
+    function convertContent() {
+      if (!input.value.trim()) {
+        output.value = '';
+        updateCount(outputCount, '');
+        copyButton.disabled = true;
+        setStatus('請先輸入要轉換的內容。', 'error');
+        input.focus();
+        return;
+      }
+
+      output.value = escapeAngleBrackets(input.value);
+      updateCount(outputCount, output.value);
+      copyButton.disabled = false;
+      setStatus('轉換完成，可以複製結果。', 'success');
+    }
+
+    function clearContent() {
+      clearTimeout(copyResetTimer);
+      input.value = '';
+      output.value = '';
+      updateCount(inputCount, '');
+      updateCount(outputCount, '');
+      copyButton.disabled = true;
+      copyLabel.textContent = '複製結果';
+      setStatus('內容已清除，請輸入新的內容。');
+      input.focus();
+    }
+
+    function showCopiedState() {
+      clearTimeout(copyResetTimer);
+      copyLabel.textContent = '已複製';
+      setStatus('已複製到剪貼簿。', 'success');
+      copyResetTimer = setTimeout(() => {
+        copyLabel.textContent = '複製結果';
+      }, 1800);
+    }
+
+    async function copyResult() {
+      if (!output.value) return;
+
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+        await navigator.clipboard.writeText(output.value);
+        showCopiedState();
+        return;
+      } catch (clipboardError) {
+        output.focus();
+        output.select();
+        output.setSelectionRange(0, output.value.length);
+
+        try {
+          const copied = document.execCommand('copy');
+          if (!copied) throw new Error('Fallback copy failed');
+          showCopiedState();
+        } catch (fallbackError) {
+          setStatus('無法自動複製，請選取結果後手動複製。', 'error');
+        }
+      }
+    }
+
+    input.addEventListener('input', () => {
+      updateCount(inputCount, input.value);
+      if (status.dataset.tone === 'error') setStatus('輸入內容後，按下「轉換內容」。');
+    });
+
+    input.addEventListener('keydown', (event) => {
+      if (event.ctrlKey && event.key === 'Enter') {
+        event.preventDefault();
+        convertContent();
+      }
+    });
+
+    convertButton.addEventListener('click', convertContent);
+    clearButton.addEventListener('click', clearContent);
+    copyButton.addEventListener('click', copyResult);
+  </script>
+</body>
+</html>
