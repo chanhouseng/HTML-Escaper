@@ -62,6 +62,6 @@ function escapeAngleBrackets(value) {
 - 加入「清除內容」、複製成功提示，以及空白輸入提示。
 - 桌面版不應讓頁面上下滑動，因此固定為單一視窗高度；過長內容改由文字框內部捲動。
 
-## 內容
+## 文件
 - docs/superpowers : AI生成的計劃文件
 - index.html : HTML 檔案
