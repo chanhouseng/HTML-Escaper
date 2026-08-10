@@ -25,11 +25,16 @@
 
     * { box-sizing: border-box; }
 
-    html { min-width: 320px; }
+    html {
+      min-width: 320px;
+      height: 100%;
+      overflow: hidden;
+    }
 
     body {
-      min-height: 100vh;
+      height: 100dvh;
       margin: 0;
+      overflow: hidden;
       background:
         linear-gradient(rgba(31, 95, 174, 0.035) 1px, transparent 1px),
         linear-gradient(90deg, rgba(31, 95, 174, 0.035) 1px, transparent 1px),
@@ -44,8 +49,12 @@
 
     .shell {
       width: min(1160px, calc(100% - 40px));
+      height: 100dvh;
       margin: 0 auto;
-      padding: 64px 0 48px;
+      padding: clamp(24px, 6vh, 64px) 0 clamp(18px, 4vh, 48px);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: clamp(12px, 2.5vh, 28px);
     }
 
     .intro {
@@ -53,7 +62,7 @@
       align-items: end;
       justify-content: space-between;
       gap: 40px;
-      margin-bottom: 28px;
+      min-height: 0;
     }
 
     .eyebrow {
@@ -104,11 +113,14 @@
     .privacy svg { color: var(--success); }
 
     .tool-card {
+      min-height: 0;
       overflow: hidden;
       border: 1px solid var(--line);
       border-radius: 16px;
       background: var(--surface);
       box-shadow: var(--shadow);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
     }
 
     .rule-bar {
@@ -143,12 +155,13 @@
     .workspace {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr);
-      min-height: 380px;
+      min-height: 0;
     }
 
     .editor-panel {
       display: flex;
       min-width: 0;
+      min-height: 0;
       flex-direction: column;
       padding: 24px;
     }
@@ -175,7 +188,7 @@
 
     textarea {
       width: 100%;
-      min-height: 286px;
+      min-height: 0;
       flex: 1;
       resize: vertical;
       border: 1px solid var(--line);
@@ -295,7 +308,7 @@
     }
 
     .hint {
-      margin: 17px 4px 0;
+      margin: 0 4px;
       color: var(--muted);
       font-size: 0.76rem;
       text-align: center;
@@ -313,26 +326,42 @@
     }
 
     @media (max-width: 760px) {
-      .shell { width: min(100% - 24px, 620px); padding-top: 34px; }
-      .intro { align-items: start; flex-direction: column; gap: 15px; }
+      .shell {
+        width: min(100% - 24px, 620px);
+        padding: 16px 0 12px;
+        gap: 10px;
+      }
+      .intro { align-items: start; flex-direction: column; gap: 6px; }
       .intro-copy { max-width: 520px; }
       .rule-bar { align-items: flex-start; flex-direction: column; }
-      .workspace { grid-template-columns: 1fr; }
-      .editor-panel { padding: 20px; }
-      .transform-axis { height: 48px; border-inline: 0; border-block: 1px solid var(--line); }
+      .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1fr) 34px minmax(0, 1fr);
+      }
+      .editor-panel { padding: 14px 20px; }
+      .transform-axis { height: auto; border-inline: 0; border-block: 1px solid var(--line); }
       .transform-mark { transform: rotate(90deg); }
-      .footer-bar { align-items: stretch; flex-direction: column; padding: 18px 20px 20px; }
-      .actions { display: grid; grid-template-columns: 1fr 1fr; }
-      .button-primary { grid-column: 1 / -1; grid-row: 1; }
+      .footer-bar { align-items: stretch; flex-direction: column; gap: 10px; padding: 12px 20px; }
+      .actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .button { min-width: 0; padding: 8px 7px; }
       .status { text-align: center; }
     }
 
     @media (max-width: 430px) {
-      h1 { font-size: 2.15rem; }
+      h1 { font-size: 1.85rem; }
+      .eyebrow { margin-bottom: 4px; }
+      .intro-copy { margin: 0; font-size: 0.85rem; }
+      .privacy { margin-top: 4px; font-size: 0.75rem; }
+      .rule-bar { min-height: 0; padding: 8px 14px; font-size: 0.7rem; gap: 5px; }
       .rules { flex-wrap: wrap; }
-      .actions { grid-template-columns: 1fr; }
-      .button-primary { grid-column: auto; }
-      textarea { min-height: 220px; }
+      .rule { padding: 3px 6px; }
+      .editor-panel { padding: 10px 14px; }
+      .editor-heading { margin-bottom: 6px; }
+      .footer-bar { padding: 9px 14px; }
+      .status { min-height: 18px; font-size: 0.72rem; }
+      .button { min-height: 36px; font-size: 0.7rem; }
+      .button svg { width: 13px; height: 13px; }
+      .hint { font-size: 0.65rem; }
     }
 
     @media (prefers-reduced-motion: reduce) {
