@@ -200,6 +200,7 @@
       font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
       font-size: 0.92rem;
       line-height: 1.7;
+      tab-size: 4;
       transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
     }
 
@@ -451,7 +452,41 @@
     let copyResetTimer;
 
     function escapeAngleBrackets(value) {
-      return value.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+      return normalizeIndentation(value)
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    }
+
+    function normalizeIndentation(value) {
+      const normalized = value
+        .replaceAll('\t', '    ')
+        .replaceAll('\u00a0', ' ');
+      const newline = normalized.includes('\r\n') ? '\r\n' : '\n';
+      const lines = normalized.split(/\r\n|\n|\r/);
+      const firstContentLine = lines.findIndex((line) => line.trim() !== '');
+
+      if (firstContentLine === -1 || firstContentLine === lines.length - 1) {
+        return normalized;
+      }
+
+      const continuationLines = lines
+        .slice(firstContentLine + 1)
+        .filter((line) => line.trim() !== '');
+
+      if (!continuationLines.length) return normalized;
+
+      const commonIndent = Math.min(
+        ...continuationLines.map((line) => line.match(/^ */)[0].length)
+      );
+
+      if (!commonIndent) return normalized;
+
+      return lines
+        .map((line, index) => {
+          if (index <= firstContentLine || line.trim() === '') return line;
+          return line.slice(commonIndent);
+        })
+        .join(newline);
     }
 
     function setStatus(message, tone = '') {
